@@ -22,11 +22,6 @@ def normalize(input_str: str) -> str:
     for _, remove in enumerate(remove_str):
         normalize_map[remove] = ""
 
-    small_str = "ァィゥェォヵヶッャュョ"
-    large_str = 'アイウエオカケツヤユヨ'
-    for num, small in enumerate(small_str):
-        normalize_map[small] = large_str[num]
-
     black_str = "@＠#＃"
     for _, black in enumerate(black_str):
         normalize_map[black] = BLACKCELL
@@ -49,12 +44,40 @@ def remove_numeric(input_lines: list) -> list:
     return removed_lines
 
 
-def load_file(file: str) -> list:
+def hira_to_kata(chara: str) -> str:
+    if ord("ぁ") < ord(chara) < ord("ゖ"):
+        return chr(ord(chara) + 96)
+    return chara
+
+
+def enlarge_kata(chara: str) -> str:
+    small_list = list("ァィゥェォヵヶッャュョ")
+    large_list = list("アイウエオカケツヤユヨ")
+    if chara in small_list:
+        return large_list[small_list.index(chara)]
+
+    return chara
+
+
+def load_file(file: str, raw: bool) -> list:
     fopen = open(file)
     input_str = fopen.read()
 
     normalized_lines = normalize(input_str).splitlines()
-    return remove_numeric(normalized_lines)
+    removed_lines = remove_numeric(normalized_lines)
+
+    if raw:
+        return removed_lines
+
+    converted_lines = []
+    for line in removed_lines:
+        converted_line = ""
+        for chara in line:
+            kata = hira_to_kata(chara)
+            converted_line += enlarge_kata(kata)
+        converted_lines.append(converted_line)
+
+    return converted_lines
 
 
 def is_black(chara: str) -> bool:
@@ -206,7 +229,7 @@ def check_words(problem: dict) -> None:
     many_words = {}
     for word in all_words:
         if all_words.count(word) > 1:
-            many_words[word] =  all_words.count(word)
+            many_words[word] = all_words.count(word)
 
     for word, count in many_words.items():
         print("{} appears {} times".format(word, count))
@@ -221,10 +244,12 @@ def main():
                         help='クロスワードの盤面')
     parser.add_argument('--check', '-c', action='store_true',
                         help='言葉の重複などを調べます')
+    parser.add_argument('--raw', '-r', action='store_true',
+                        help='文字を変換しません')
 
     args = parser.parse_args()
 
-    input_board = load_file(args.file)
+    input_board = load_file(args.file, args.raw)
     if not validate(input_board):
         print("この盤面は加工できません。")
         for line in input_board:
