@@ -2,15 +2,63 @@
 import argparse
 
 
+BLACKCELL = "＠"
+BLANKCELL = "？"
+
+
+def validate(input_lines: list) -> bool:
+    length = len(input_lines[0])
+    for line in input_lines:
+        if len(line) != length:
+            return False
+
+    return True
+
+
+def normalize(input_str: str) -> str:
+    normalize_map = {}
+
+    remove_str = " 　."
+    for _, remove in enumerate(remove_str):
+        normalize_map[remove] = ""
+
+    small_str = "ァィゥェォヵヶッ"
+    large_str = 'アイウエオカケツ'
+    for num, small in enumerate(small_str):
+        normalize_map[small] = large_str[num]
+
+    black_str = "@＠#＃"
+    for _, black in enumerate(black_str):
+        normalize_map[black] = BLACKCELL
+
+    blank_str = "?？.-"
+    for _, blank in enumerate(blank_str):
+        normalize_map[blank] = BLANKCELL
+
+    normalize_table = str.maketrans(normalize_map)
+
+    return input_str.translate(normalize_table)
+
+
+def remove_numeric(input_lines: list) -> list:
+    removed_lines = []
+    for line in input_lines:
+        if not line.isnumeric():
+            removed_lines.append(line)
+
+    return removed_lines
+
+
 def load_file(file: str) -> list:
     fopen = open(file)
-    input_lines = fopen.read().splitlines()
+    input_str = fopen.read()
 
-    return input_lines
+    normalized_lines = normalize(input_str).splitlines()
+    return remove_numeric(normalized_lines)
 
 
 def is_black(chara: str) -> bool:
-    return chara in ('@', '＠', '#', '＃')
+    return chara == BLACKCELL
 
 
 def is_number(row: int, column: int, board: list) -> bool:
@@ -101,9 +149,7 @@ def get_words_keys(lines: list):
     return row_words, column_words
 
 
-def load_problem(file: str) -> dict:
-    board = load_file(file)
-
+def get_problem(board: list) -> dict:
     problem = {}
     problem["board"] = board
 
@@ -143,12 +189,21 @@ def main():
 
     args = parser.parse_args()
 
-    problem = load_problem(args.file)
+    input_board = load_file(args.file)
+    if not validate(input_board):
+        print("この盤面は加工できません。")
+        for line in input_board:
+            print(line)
+        return 1
+
+    problem = get_problem(input_board)
 
     if args.check:
         check_words(problem)
     else:
         show_problem(problem)
+
+    return 0
 
 
 if __name__ == '__main__':
