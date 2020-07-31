@@ -22,8 +22,8 @@ def normalize(input_str: str) -> str:
     for _, remove in enumerate(remove_str):
         normalize_map[remove] = ""
 
-    small_str = "ァィゥェォヵヶッ"
-    large_str = 'アイウエオカケツ'
+    small_str = "ァィゥェォヵヶッャュョ"
+    large_str = 'アイウエオカケツヤユヨ'
     for num, small in enumerate(small_str):
         normalize_map[small] = large_str[num]
 
@@ -177,7 +177,42 @@ def show_problem(problem: dict) -> None:
 
 
 def check_words(problem: dict) -> None:
-    print("チェック")
+    print("クロスワードのチェック")
+
+    print("--サイズ--")
+    row_size = len(problem["board"][0])
+    column_size = len(problem["board"])
+    board_size = row_size * column_size
+
+    black_count = 0
+    for line in problem["board"]:
+        black_count += line.count(BLACKCELL)
+
+    row_words_num = len(problem["row"])
+    column_words_num = len(problem["column"])
+
+    print("{}x{} = {}".format(row_size, column_size, board_size))
+    print("black: {}, other: {}".format(black_count, board_size - black_count))
+    print("words: {} (row: {} / column {})".format(
+        row_words_num + column_words_num, row_words_num, column_words_num))
+    print()
+
+    print("--出現回数--")
+
+    all_words = []
+    for _, word in problem["row"] + problem["column"]:
+        all_words.append(word)
+
+    many_words = {}
+    for word in all_words:
+        if all_words.count(word) > 1:
+            many_words[word] =  all_words.count(word)
+
+    for word, count in many_words.items():
+        print("{} appears {} times".format(word, count))
+
+    if len(many_words) == 0:
+        print("all words appear just once")
 
 
 def main():
