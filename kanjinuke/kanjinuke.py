@@ -144,10 +144,10 @@ def analysis(words: list) -> None:
 
     print("--サイズ--")
     print("文字数: {}, 単語数: {}".format(len(all_chara), len(words)))
-    count_hidden = len(chara_count[1])
-    count_shown = len(all_kind_chara) - count_hidden
+    num_hint = len(chara_count[1])
+    num_hidden = len(all_kind_chara) - num_hint
     print("種類: {} (ヒント: {}, 抜け: {})".format(
-        len(all_kind_chara), count_shown, count_hidden))
+        len(all_kind_chara), num_hint, num_hidden))
     print()
 
     print("--出現回数--")
@@ -155,16 +155,30 @@ def analysis(words: list) -> None:
         print("{}: {} ({})".format(count, charas, len(charas)))
     print()
 
-    print("--利用度--")
-    print("言葉：抜けている文字数/他で使われる数")
+    print("--利用数--")
     for word in words:
+        print("{}: ".format(word), end="")
         score = 0
-        hidden = 0
         for _, chara in enumerate(word):
-            score += all_chara.count(chara) - 1
-            if all_chara.count(chara) > 1:
-                hidden += 1
-        print("{}: {}/{}".format(word, hidden, score))
+            count_other = all_chara.count(chara) - 1
+            score += count_other
+            print("{}".format(count_other), end="")
+        print(" = {}".format(score))
+    print()
+
+    print("--ヒント数--")
+    count_hint = {}
+    for word in words:
+        word_count_hint = 0
+        for _, chara in enumerate(word):
+            if all_chara.count(chara) == 1:
+                word_count_hint += 1
+        if word_count_hint in count_hint:
+            count_hint[word_count_hint] += 1
+        else:
+            count_hint[word_count_hint] = 1
+    for hint, count in count_hint.items():
+        print("hint {}: {} words".format(hint, count))
     print()
 
     print("--包含関係--")
