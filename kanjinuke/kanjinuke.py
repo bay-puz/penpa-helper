@@ -155,16 +155,15 @@ def analysis(words: list) -> None:
         print("{}: {} ({})".format(count, charas, len(charas)))
     print()
 
-    print("--利用度--")
-    print("言葉：抜けている文字数/他で使われる数")
+    print("--利用数--")
     for word in words:
+        print("{}: ".format(word), end="")
         score = 0
-        hidden = 0
         for _, chara in enumerate(word):
-            score += all_chara.count(chara) - 1
-            if all_chara.count(chara) > 1:
-                hidden += 1
-        print("{}: {}/{}".format(word, hidden, score))
+            count_other = all_chara.count(chara) - 1
+            score += count_other
+            print("{}".format(count_other), end="")
+        print(" = {}".format(score))
     print()
 
     print("--包含関係--")
