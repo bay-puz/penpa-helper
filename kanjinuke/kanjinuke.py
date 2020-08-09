@@ -144,10 +144,10 @@ def analysis(words: list) -> None:
 
     print("--サイズ--")
     print("文字数: {}, 単語数: {}".format(len(all_chara), len(words)))
-    count_hidden = len(chara_count[1])
-    count_shown = len(all_kind_chara) - count_hidden
+    num_hint = len(chara_count[1])
+    num_hidden = len(all_kind_chara) - num_hint
     print("種類: {} (ヒント: {}, 抜け: {})".format(
-        len(all_kind_chara), count_shown, count_hidden))
+        len(all_kind_chara), num_hint, num_hidden))
     print()
 
     print("--出現回数--")
