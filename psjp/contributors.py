@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
+import json
 import re
 import requests
 from time import sleep
@@ -24,11 +25,15 @@ def get_psjp_data(author_id: int, puzzle_id: int) -> (str, str, int):
 
     count = re.search(SEARCH_COUNT, r.text).group(0)
 
+    if author_id == 0:
+        author = "ALL"
+    if puzzle_id == 0:
+        puzzle = "ALL"
     return author, puzzle, int(count)
 
 
 def get_active_authors():
-    authors = []
+    authors = [0]
     a = 0
     while True:
         a += 1
@@ -40,12 +45,11 @@ def get_active_authors():
             break
         if count > 0:
             authors += [a]
-            print("{}({}): {}".format(author, a, count))
     return authors
 
 
 def get_active_puzzles():
-    puzzles = []
+    puzzles = [-1, 0]
     p = 0
     while True:
         p += 1
@@ -57,9 +61,7 @@ def get_active_puzzles():
             break
         if count > 0:
             puzzles += [p]
-            print("{}({}): {}".format(puzzle, p, count))
 
-    puzzles += [-1]
     return puzzles
 
 
@@ -67,14 +69,15 @@ def loop(author_id: int = None, puzzle_id: int = None):
     authors = [author_id] if author_id is not None else get_active_authors()
     puzzles = [puzzle_id] if puzzle_id is not None else get_active_puzzles()
 
+    data = []
     for a in authors:
         for p in puzzles:
             author, puzzle, count = get_psjp_data(a, p)
-            if count > 0:
-                print("{}({}) {}({}): {}".format(author, a, puzzle, p, count))
+            d = {"author": {"id": a, "name": author}, "puzzle": {"id": p, "name": puzzle}, "count": count}
+            data += [d]
             sleep(2)
 
-    return None
+    return data
 
 
 def main():
@@ -86,7 +89,8 @@ def main():
 
     args = parser.parse_args()
 
-    loop(author_id=args.author_id, puzzle_id=args.puzzle_id)
+    psjp_data = loop(author_id=args.author_id, puzzle_id=args.puzzle_id)
+    print(json.dumps(psjp_data))
 
 
 if __name__ == '__main__':
