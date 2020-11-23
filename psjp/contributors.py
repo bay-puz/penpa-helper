@@ -7,11 +7,8 @@ from time import sleep
 
 PSJP_URL = 'https://puzsq.jp/main/index.php'
 
-MAX_AUTHOR_ID = 1000
-MAX_PUZZLE_ID = 1000
-
-SEARCH_AUTHOR = r'(?<=作：)\w+'
-SEARCH_PUZZLE = r'(?<=種類：)\w+'
+SEARCH_AUTHOR = r'(?<=作：)[^<]+'
+SEARCH_PUZZLE = r'(?<=種類：)[^<]+'
 SEARCH_COUNT = r'(?<=取得件数：)[0-9]+'
 
 
@@ -20,29 +17,61 @@ def get_psjp_data(author_id: int, puzzle_id: int) -> (str, str, int):
     r = requests.get(url)
 
     author_re = re.search(SEARCH_AUTHOR, r.text)
-    if author_re is None:
-        return None, None, 0
-    author = author_re.group(0)
+    author = author_re.group(0) if author_re is not None else None
 
     puzzle_re = re.search(SEARCH_PUZZLE, r.text)
-    if puzzle_re is None:
-        return None, None, 0
-    puzzle = puzzle_re.group(0)
+    puzzle = puzzle_re.group(0) if puzzle_re is not None else None
 
     count = re.search(SEARCH_COUNT, r.text).group(0)
 
     return author, puzzle, int(count)
 
 
-def loop(author_id: int = None, puzzle_id: int = None):
-    author_range = range(1, MAX_AUTHOR_ID) if author_id is None else range(author_id, author_id + 1)
-    puzzle_range = range(1, MAX_PUZZLE_ID) if puzzle_id is None else range(puzzle_id, puzzle_id + 1)
+def get_active_authors():
+    authors = []
+    a = 0
+    while True:
+        a += 1
+        if 1 < a and a < 23:
+            continue
 
-    for a in author_range:
-        for p in puzzle_range:
+        author, puzzle, count = get_psjp_data(a, 0)
+        if author is None:
+            break
+        if count > 0:
+            authors += [a]
+            print("{}({}): {}".format(author, a, count))
+    return authors
+
+
+def get_active_puzzles():
+    puzzles = []
+    p = 0
+    while True:
+        p += 1
+        if p == 23 or p == 24 or p == 60 or p == 93:
+            continue
+
+        author, puzzle, count = get_psjp_data(0, p)
+        if puzzle is None:
+            break
+        if count > 0:
+            puzzles += [p]
+            print("{}({}): {}".format(puzzle, p, count))
+
+    puzzles += [-1]
+    return puzzles
+
+
+def loop(author_id: int = None, puzzle_id: int = None):
+    authors = [author_id] if author_id is not None else get_active_authors()
+    puzzles = [puzzle_id] if puzzle_id is not None else get_active_puzzles()
+
+    for a in authors:
+        for p in puzzles:
             author, puzzle, count = get_psjp_data(a, p)
-            if author is not None:
-                print("{} {} {}".format(author, puzzle, count))
+            if count > 0:
+                print("{}({}) {}({}): {}".format(author, a, puzzle, p, count))
             sleep(2)
 
     return None
