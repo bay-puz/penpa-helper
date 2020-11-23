@@ -32,7 +32,7 @@ def get_psjp_data(author_id: int, puzzle_id: int) -> (str, str, int):
     return author, puzzle, int(count)
 
 
-def get_active_authors():
+def get_active_authors(all: bool = True):
     authors = [0]
     a = 0
     while True:
@@ -43,12 +43,12 @@ def get_active_authors():
         author, puzzle, count = get_psjp_data(a, 0)
         if author is None:
             break
-        if count > 0:
+        if count > 0 or all:
             authors += [a]
     return authors
 
 
-def get_active_puzzles():
+def get_active_puzzles(all: bool = True):
     puzzles = [-1, 0]
     p = 0
     while True:
@@ -59,22 +59,23 @@ def get_active_puzzles():
         author, puzzle, count = get_psjp_data(0, p)
         if puzzle is None:
             break
-        if count > 0:
+        if count > 0 or all:
             puzzles += [p]
 
     return puzzles
 
 
-def loop(author_id: int = None, puzzle_id: int = None):
-    authors = [author_id] if author_id is not None else get_active_authors()
-    puzzles = [puzzle_id] if puzzle_id is not None else get_active_puzzles()
+def loop(author_id: int = None, puzzle_id: int = None, all: bool = False):
+    authors = [author_id] if author_id is not None else get_active_authors(all)
+    puzzles = [puzzle_id] if puzzle_id is not None else get_active_puzzles(all)
 
     data = []
     for a in authors:
         for p in puzzles:
             author, puzzle, count = get_psjp_data(a, p)
-            d = {"author": {"id": a, "name": author}, "puzzle": {"id": p, "name": puzzle}, "count": count}
-            data += [d]
+            if count > 0 or all:
+                d = {"author": {"id": a, "name": author}, "puzzle": {"id": p, "name": puzzle}, "count": count}
+                data += [d]
             sleep(2)
 
     return data
@@ -82,14 +83,13 @@ def loop(author_id: int = None, puzzle_id: int = None):
 
 def main():
     parser = argparse.ArgumentParser(description='Puzzle Square JPから投稿数などを得る')
-    parser.add_argument('--author_id', '-a', type=int,
-                        help='作者ID')
-    parser.add_argument('--puzzle_id', '-p', type=int,
-                        help='パズルID')
+    parser.add_argument('--author_id', '-a', type=int, help='作者ID')
+    parser.add_argument('--puzzle_id', '-p', type=int, help='パズルID')
+    parser.add_argument('--show-all', action='store_true', help='問題が0問でも出力する')
 
     args = parser.parse_args()
 
-    psjp_data = loop(author_id=args.author_id, puzzle_id=args.puzzle_id)
+    psjp_data = loop(author_id=args.author_id, puzzle_id=args.puzzle_id, all=args.show_all)
     print(json.dumps(psjp_data))
 
 
