@@ -3,6 +3,8 @@ import argparse
 import json
 import re
 import requests
+from multiprocessing import Pool
+from sys import stderr
 from time import sleep
 
 
@@ -11,6 +13,8 @@ PSJP_URL = 'https://puzsq.jp/main/index.php'
 SEARCH_AUTHOR = r'(?<=作：)[^<]+'
 SEARCH_PUZZLE = r'(?<=種類：)[^<]+'
 SEARCH_COUNT = r'(?<=取得件数：)[0-9]+'
+
+MAX_PROCESSES = 20
 
 
 def get_psjp_data(author_id: int, puzzle_id: int) -> (str, str, int):
@@ -23,13 +27,16 @@ def get_psjp_data(author_id: int, puzzle_id: int) -> (str, str, int):
     puzzle_re = re.search(SEARCH_PUZZLE, r.text)
     puzzle = puzzle_re.group(0) if puzzle_re is not None else None
 
-    count = re.search(SEARCH_COUNT, r.text).group(0)
+    count_re = re.search(SEARCH_COUNT, r.text)
+    count = int(count_re.group(0)) if count_re is not None else 0
 
     if author_id == 0:
         author = "ALL"
     if puzzle_id == 0:
         puzzle = "ALL"
-    return author, puzzle, int(count)
+
+    ret = {"author": {"id": author_id, "name": author}, "puzzle": {"id": puzzle_id, "name": puzzle}, "count": count}
+    return ret
 
 
 def get_active_authors(all: bool = True):
@@ -40,11 +47,13 @@ def get_active_authors(all: bool = True):
         if 1 < a and a < 23:
             continue
 
-        author, puzzle, count = get_psjp_data(a, 0)
-        if author is None:
+        data = get_psjp_data(a, 0)
+        if data['author']['name'] is None:
             break
-        if count > 0 or all:
+        if data['count'] > 0 or all:
             authors += [a]
+            print("active author: {}".format(data['author']['name']), file=stderr)
+
     return authors
 
 
@@ -56,11 +65,12 @@ def get_active_puzzles(all: bool = True):
         if p == 23 or p == 24 or p == 60 or p == 93:
             continue
 
-        author, puzzle, count = get_psjp_data(0, p)
-        if puzzle is None:
+        data = get_psjp_data(0, p)
+        if data['puzzle']['name'] is None:
             break
-        if count > 0 or all:
+        if data['count'] > 0 or all:
             puzzles += [p]
+            print("active puzzle: {}".format(data['puzzle']['name']), file=stderr)
 
     return puzzles
 
@@ -69,16 +79,16 @@ def loop(author_id: int = None, puzzle_id: int = None, all: bool = False):
     authors = [author_id] if author_id is not None else get_active_authors(all)
     puzzles = [puzzle_id] if puzzle_id is not None else get_active_puzzles(all)
 
-    data = []
+    arg_list = []
     for a in authors:
         for p in puzzles:
-            author, puzzle, count = get_psjp_data(a, p)
-            if count > 0 or all:
-                d = {"author": {"id": a, "name": author}, "puzzle": {"id": p, "name": puzzle}, "count": count}
-                data += [d]
-            sleep(2)
+            arg_list += [(a, p)]
 
-    return data
+    map = []
+    with Pool(processes=MAX_PROCESSES) as pool:
+        map = pool.starmap(get_psjp_data, arg_list)
+
+    return map
 
 
 def main():
