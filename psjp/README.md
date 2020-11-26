@@ -5,22 +5,20 @@
 作者別、パズル別の問題数を取得し、JSON形式で出力する。
 
 
-出力例
+実行例
 ```
-$ python3 contributors.py --author_id 95 --puzzle_id 1
-[
-  {
-    "author": {
-      "id": 95,
-      "name": "bay"
-    },
-    "puzzle": {
-      "id": 1,
-      "name": "スリザーリンク"
-    },
-    "count": 4
-  }
-]
+$ python3 contributors.py --author_id 95 --puzzle_id 1 | jq .
+{
+  "author": {
+    "id": 95,
+    "name": "bay"
+  },
+  "puzzle": {
+    "id": 1,
+    "name": "スリザーリンク"
+  },
+  "count": 4
+}
 ```
 
 Puzzle Square JPでは、URLで作者ID(?author=XXX)とパズルID(?puzzle=XXX)を同時に指定することで、その作者のそのパズルの一覧を見ることができる。
@@ -33,3 +31,4 @@ Puzzle Square JPでは、URLで作者ID(?author=XXX)とパズルID(?puzzle=XXX)�
 
 データを取得する際には、作者IDとパズルIDを指定したリクエストを投げる。
 リクエストを投げる部分は並列化しているが、並列数を上げすぎるとサイトに影響が出るかもしれない。
+また、リクエストが通らないことがたまにあるので、データの取得に失敗したときはIDをstderrに出力する。
