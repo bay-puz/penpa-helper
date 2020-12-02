@@ -34,6 +34,10 @@ Puzzle Square JPでは、URLで作者ID(?author=XXX)とパズルID(?puzzle=XXX)�
 また、リクエストが通らないことがたまにあるので、データの取得に失敗したときはIDをstderrに出力する。
 
 
-## data/data.JSON
+## data/data.json
 `contributors.py` で取得したすべての作者・パズルのデータをJSONの配列にしたもの。
 ただし、問題数(count)が0のデータは省き、作者名(author.name)は取り除いている。
+
+
+## wand-data/data.json
+wandさんが公開しているPuzzle Square JPのデータをJSON形式に変換したもの。
