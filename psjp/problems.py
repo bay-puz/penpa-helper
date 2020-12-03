@@ -46,7 +46,8 @@ def get_puzzle(problem_soup):
     puzzle_find = problem_soup.find('a', class_='puz_kind')
     if puzzle_find is None:
         return None
-    return puzzle_find.get_text()
+    puzzle_str = puzzle_find.get_text() if puzzle_str is not None else 'その他'
+    return puzzle_str
 
 
 def get_author(problem_soup):
