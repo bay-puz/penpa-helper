@@ -46,8 +46,15 @@ def get_puzzle(problem_soup):
     puzzle_find = problem_soup.find('a', class_='puz_kind')
     if puzzle_find is None:
         return None
-    puzzle_str = puzzle_find.get_text() if puzzle_str is not None else 'その他'
-    return puzzle_str
+    puzzle_str = puzzle_find.get_text() if puzzle_find is not None else 'その他'
+
+    PATTERN_PUZZLE_ID = r'(?<=puzzle=)[0-9]+'
+    puzzle_id_re = re.search(PATTERN_PUZZLE_ID, puzzle_find['href'])
+    if puzzle_id_re is None:
+        return None
+    puzzle_id = int(puzzle_id_re.group(0))
+
+    return (puzzle_id, puzzle_str)
 
 
 def get_author(problem_soup):
@@ -58,7 +65,14 @@ def get_author(problem_soup):
     author_re = re.search(PATTERN_AUTHOR, author_find.get_text())
     if author_re is None:
         return None
-    return author_re.group(0)
+
+    PATTERN_AUTHOR_ID = r'(?<=author=)[0-9]+'
+    author_id_re = re.search(PATTERN_AUTHOR_ID, author_find['href'])
+    if author_id_re is None:
+        return None
+    author_id = int(author_id_re.group(0))
+
+    return (author_id, author_re.group(0))
 
 
 def get_date(problem_soup):
@@ -66,6 +80,11 @@ def get_date(problem_soup):
     if date_find is None:
         return None
     return date_find.get_text()
+
+
+def get_variant(problem_soup):
+    variant_find = problem_soup.find('span', class_='puz_variant')
+    return 0 if variant_find is None else 1
 
 
 def problem_dict(problem_soup):
@@ -79,9 +98,10 @@ def problem_dict(problem_soup):
         print("error: id={}, liked=None, soup={}".format(problem_id, problem_soup), file=stderr)
         return {}
 
-    puzzle_name = get_puzzle(problem_soup)
-    author_name = get_author(problem_soup)
+    puzzle_id, puzzle_name = get_puzzle(problem_soup)
+    author_id, author_name = get_author(problem_soup)
     date_str = get_date(problem_soup)
+    variant_int = get_variant(problem_soup)
 
     if puzzle_name is None or author_name is None or date_str is None:
         print("warning: id={}, puzzle_name={}, author_name={}, created_at={}"\
@@ -90,8 +110,11 @@ def problem_dict(problem_soup):
     data = {
             "id": problem_id, \
             "liked": liked, \
+            "author_id": author_id, \
             "author_name": author_name, \
             "puzzle_name": puzzle_name, \
+            "puzzle_id": puzzle_id, \
+            "variant": variant_int, \
             "created_at": date_str
             }
     return data
