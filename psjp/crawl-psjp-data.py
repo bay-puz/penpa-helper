@@ -45,13 +45,14 @@ def get_liked(problem_soup):
 def get_puzzle(problem_soup):
     puzzle_find = problem_soup.find('a', class_='puz_kind')
     if puzzle_find is None:
-        return None
-    puzzle_str = puzzle_find.get_text() if puzzle_find is not None else 'その他'
+        return (0, None)
+    puzzle_text = puzzle_find.get_text()
+    puzzle_str = 'その他' if puzzle_text == '' else puzzle_text
 
-    PATTERN_PUZZLE_ID = r'(?<=puzzle=)[0-9]+'
+    PATTERN_PUZZLE_ID = r'(?<=puzzle=)-?[0-9]+'
     puzzle_id_re = re.search(PATTERN_PUZZLE_ID, puzzle_find['href'])
     if puzzle_id_re is None:
-        return None
+        return (0, None)
     puzzle_id = int(puzzle_id_re.group(0))
 
     return (puzzle_id, puzzle_str)
@@ -60,16 +61,16 @@ def get_puzzle(problem_soup):
 def get_author(problem_soup):
     author_find = problem_soup.find('a', class_='author')
     if author_find is None:
-        return None
+        return (0, None)
     PATTERN_AUTHOR = r'(?<=作：)[^<]+'
     author_re = re.search(PATTERN_AUTHOR, author_find.get_text())
     if author_re is None:
-        return None
+        return (0, None)
 
     PATTERN_AUTHOR_ID = r'(?<=author=)[0-9]+'
     author_id_re = re.search(PATTERN_AUTHOR_ID, author_find['href'])
     if author_id_re is None:
-        return None
+        return (0, None)
     author_id = int(author_id_re.group(0))
 
     return (author_id, author_re.group(0))
