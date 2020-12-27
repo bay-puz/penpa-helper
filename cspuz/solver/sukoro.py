@@ -13,7 +13,7 @@ def solve_sukoro(height, width, problem):
 
     has_number = solver.bool_array((height, width))
     graph.active_vertices_connected(solver, has_number)
-    nums = solver.int_array((height, width), 0, 4)
+    nums = solver.int_array((height, width), -1, 4)
     solver.add_answer_key(nums)
     solver.add_answer_key(has_number)
 
@@ -34,12 +34,13 @@ def solve_sukoro(height, width, problem):
                 solver.ensure((has_number[y, x] & has_number[y, x+1]).then(nums[y, x] != nums[y, x+1]))
             solver.ensure(has_number[y, x].then(count_true(neighbors) == nums[y, x]))
 
-    solver.ensure((~has_number).then(nums == 0))
+    solver.ensure((~has_number).then(nums < 0))
 
     for y in range(height):
         for x in range(width):
-            if problem[y][x] > 0:
+            if problem[y][x] >= 0:
                 solver.ensure(nums[y, x] == problem[y][x])
+                solver.ensure(has_number[y, x])
 
     is_sat = solver.solve(backend.z3)
 
@@ -55,7 +56,7 @@ def compute_score(nums):
 
 
 def generate_sukoro(height, width, verbose=False):
-    problem = [[0 for _ in range(width)] for _ in range(height)]
+    problem = [[-1 for _ in range(width)] for _ in range(height)]
     score = 0
     temperature = 5.0
     fully_solved_score = height * width
@@ -103,20 +104,67 @@ def generate_sukoro(height, width, verbose=False):
     return None
 
 
+def _encode_spaces(spaces):
+    if spaces > 26:
+        return 'z' + _encode_spaces(spaces - 26)
+    return chr(ord('a') + spaces - 1)
+
+
+def to_puzz_link_url(height, width, problem):
+    puzz_link_problem = []
+    spaces = 0
+    for row in problem:
+        for num in row:
+            if spaces == 26:
+                puzz_link_problem.append('z')
+                spaces = 0
+            if num == -1:
+                spaces += 1
+            else:
+                if spaces > 0:
+                    puzz_link_problem.append(_encode_spaces(spaces))
+                    spaces = 0
+                puzz_link_problem.append(str(num))
+    if spaces > 0:
+        puzz_link_problem.append(_encode_spaces(spaces))
+
+    return 'https://puzz.link/p?sukoro/{}/{}/{}'.format(width, height, ''.join(puzz_link_problem))
+
+
+def _decode_spaces(char):
+    return ord(char) - ord('a') + 1
+
+
+def parse_puzz_link_url(url):
+    height, width, body = url.split('/')[-3:]
+    height = int(height)
+    width = int(width)
+
+    i = 0
+    pos = 0
+    problem = [[-1 for _ in range(width)] for _ in range(height)]
+    num = ['0', '1', '2', '3', '4']
+    while i < len(body):
+        if body[i] in num:
+            problem[int(pos / width)][pos % width] = int(body[i])
+            pos += 1
+        elif body[i] == '.':
+            problem[int(pos / width)][pos % width] = -1
+            pos += 1
+        else:
+            pos += _decode_spaces(body[i])
+        i += 1
+    return height, width, problem
+
+
 def _main():
-    if len(sys.argv) == 1:
-        # http://pzv.jp/p.html?sukoro/8/8/j3d1b2a4b33c2b2d3a13h1a2b1d1d1
-        height = width = 8
-        is_sat, nums, has_number = solve_sukoro(height, width, [
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 3, 0, 0, 0, 0, 1],
-            [0, 0, 2, 0, 4, 0, 0, 3],
-            [3, 0, 0, 0, 2, 0, 0, 2],
-            [0, 0, 0, 0, 3, 0, 1, 3],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 0, 2, 0, 0, 1, 0, 0],
-            [0, 0, 1, 0, 0, 0, 0, 1],
-        ])
+    if len(sys.argv) < 3:
+        puzz_link = 'http://puzz.link/p?sukoro/8/8/j3d1b2a4b33c2b2d3a13h1a2b1d1d1'
+        if len(sys.argv) == 2:
+            puzz_link = sys.argv[1]
+        print('problem: {}'.format(puzz_link))
+        height, width, problem = parse_puzz_link_url(puzz_link)
+        is_sat, nums, has_number = solve_sukoro(height, width, problem)
         print('has_answer:', is_sat)
         if is_sat:
             ans = []
@@ -138,7 +186,7 @@ def _main():
     else:
         height, width = map(int, sys.argv[1:])
         problem = generate_sukoro(height, width, True)
-        print(util.stringify_array(problem, str))
+        print(to_puzz_link_url(height, width, problem))
 
 
 if __name__ == '__main__':
