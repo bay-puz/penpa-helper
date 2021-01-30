@@ -88,6 +88,12 @@ def get_variant(problem_soup):
     return 0 if variant_find is None else 1
 
 
+def get_difficulty(problem_soup):
+    difficulty_find = problem_soup.find('span', class_='difficulty')
+    difficulty = re.search(r'[0-9]', difficulty_find.get_text()).group(0)
+    return int(difficulty)
+
+
 def problem_dict(problem_soup):
     problem_id = get_id(problem_soup)
     if problem_id is None:
@@ -103,6 +109,7 @@ def problem_dict(problem_soup):
     author_id, author_name = get_author(problem_soup)
     date_str = get_date(problem_soup)
     variant_int = get_variant(problem_soup)
+    difficulty_int = get_difficulty(problem_soup)
 
     if puzzle_name is None or author_name is None or date_str is None:
         print("warning: id={}, puzzle_name={}, author_name={}, created_at={}"\
@@ -116,7 +123,8 @@ def problem_dict(problem_soup):
             "puzzle_name": puzzle_name, \
             "puzzle_id": puzzle_id, \
             "variant": variant_int, \
-            "created_at": date_str
+            "created_at": date_str, \
+            "difficulty": difficulty_int
             }
     return data
 
