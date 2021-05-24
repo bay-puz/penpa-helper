@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 import argparse
-import itertools
+from re import fullmatch
 
 
-def load_jisho(file: str, width: int = -1) -> list:
+def load_jisho(file: str, width: int) -> list:
     fopen = open(file)
     words = fopen.read().splitlines()
-
-    if width <= 0:
-        return words
 
     words_filtered = []
     for word in words:
@@ -29,18 +26,43 @@ def normalize(problem: str) -> str:
     return normalized
 
 
-def solve(jisho: list, problem: str, additional: int) -> list:
-    width = len(problem) - additional
-    candidates = []
+def generate_pattern(problem: str, len_answer: int) -> str:
+    chars = set(problem)
+    char_pattern = '[' + str.join('', chars) + ']'
+
+    pattern = ''
+    for _ in range(len_answer):
+        pattern += char_pattern
+    return pattern
+
+
+def generate_map(problem: str) -> dict:
+    char_counts = {}
+    for char in problem:
+        if char in char_counts:
+            continue
+        char_counts[char] = problem.count(char)
+    return char_counts
+
+
+def check_word(word: str, pattern: str, char_map: dict):
+    if not fullmatch(pattern, word):
+        return False
+
+    for char, num in char_map.items():
+        if word.count(char) > num:
+            return False
+    return True
+
+
+def solve(jisho: list, problem: str, len_answer: int) -> list:
+    pattern = generate_pattern(problem, len_answer)
+    char_map = generate_map(problem)
+
     answers = []
-    for permutation in itertools.permutations(range(len(problem)), width):
-        candidate = ''
-        for pos in permutation:
-            candidate += problem[pos]
-        if candidate not in candidates:
-            if candidate in jisho:
-                answers.append(candidate)
-            candidates.append(candidate)
+    for word in jisho:
+        if check_word(word, pattern, char_map):
+            answers.append(word)
 
     return answers
 
@@ -55,6 +77,7 @@ def main():
     args = parser.parse_args()
 
     problem = normalize(args.problem)
+    len_answer = len(problem) - args.n
     if args.n == 0:
         print("アナグラム")
     elif args.n == 1:
@@ -62,8 +85,8 @@ def main():
     else:
         print("チマタグラム（加えた文字数={}）".format(args.n))
     print("問題：{} ".format(problem))
-    jisho = load_jisho(args.jisho, len(problem) - args.n)
-    answer_list = solve(jisho, problem, args.n)
+    jisho = load_jisho(args.jisho, len_answer)
+    answer_list = solve(jisho, problem, len_answer)
 
     if len(answer_list) == 0:
         print("解がありません。。。")
