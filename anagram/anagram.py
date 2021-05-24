@@ -15,14 +15,21 @@ def load_jisho(file: str, width: int) -> list:
 
 
 def normalize(problem: str) -> str:
-    str_before = "ぁぃぅぇぉゃゅょっ"
-    str_after = "あいうえおやゆよつ"
+    def _kata_to_hira(char: str) -> str:
+        if ord("ァ") < ord(char) < ord("ヶ"):
+            return chr(ord(char) - 96)
+        return char
+
+    def _enlarge_hira(char: str) -> str:
+        str_small = "ぁぃぅぇぉゕヶっゃゅょ"
+        str_large = "あいうえおかけつやゆよ"
+        if char in str_small:
+            return str_large[str_small.index(char)]
+        return char
+
     normalized = ''
-    for chara in problem:
-        if chara in str_before:
-            normalized += str_after[str_before.index(chara)]
-        else:
-            normalized += chara
+    for char in problem:
+        normalized += _enlarge_hira(_kata_to_hira(char))
     return normalized
 
 
