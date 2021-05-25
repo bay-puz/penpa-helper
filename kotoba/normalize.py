@@ -2,6 +2,12 @@
 import argparse
 
 
+def load(file_name: str) -> list:
+    with open(file_name) as file:
+        words = file.read().splitlines()
+        return words
+
+
 def load_ime(file_name: str) -> list:
     with open(file_name) as file:
         ime = file.read().splitlines()
@@ -50,7 +56,7 @@ def convert_hira(word: str) -> str:
     return converted
 
 
-def sort_buta(words: list) -> list:
+def sort_len(words: list) -> list:
     return sorted(sorted(set(words)), key=len)
 
 
@@ -60,17 +66,19 @@ def main():
     parser.add_argument('--ime', action='store_true', help='IMEファイルを変換')
     args = parser.parse_args()
 
+    words = []
     if args.ime:
         ime_words = load_ime(args.file)
-        words = []
         for word in ime_words:
             words.append(convert_hira(word))
+    else:
+        words = load(args.file)
 
-        words = sort_buta(words)
-        for word in words:
-            if len(word) < 2:
-                continue
-            print(word)
+    words = sort_len(words)
+    for word in words:
+        if len(word) < 2:
+            continue
+        print(word)
 
 
 if __name__ == '__main__':
