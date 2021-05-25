@@ -15,45 +15,39 @@ def load_ime(file_name: str) -> list:
 
 
 def kata_to_hira(char: str) -> str:
-    if ord("ァ") < ord(char) < ord("ヶ"):
+    if ord("ァ") <= ord(char) <= ord("ヶ"):
         return chr(ord(char) - 96)
     return char
 
 
-def enlarge_hira(char: str) -> str:
-    str_small = "ぁぃぅぇぉゕヶっゃゅょ"
-    str_large = "あいうえおかけつやゆよ"
-    if char in str_small:
-        return str_large[str_small.index(char)]
-    return char
+def convert_hira(word: str) -> str:
+    def _convert_char(char: str):
+        str_before = "ぁぃぅぇぉゕゖっゃゅょゎゐゑ"
+        str_after = "あいうえおかけつやゆよわいえ"
+        if char in str_before:
+            return str_after[str_before.index(char)]
+        return char
 
-
-def convert_v(word: str) -> str:
     converted = ''
     i = 0
     while i < len(word):
-        str_small = 'ぁぃぅぇぉ'
-        str_b = 'ばびぶべぼ'
+        str_aieo = 'ぁぃぇぉ'
+        str_yayuyo = 'ゃゅょ'
+        str_b = 'ばびべぼ'
         if word[i] == 'ゔ':
-            if i == len(word) - 1 or word[i+1] not in str_small:
+            if i == len(word) - 1 or word[i+1] not in str_aieo + str_yayuyo:
                 converted += 'ぶ'
-                i += 1
             else:
-                converted += str_b[str_small.index(word[i+1])]
-                i += 2
+                if word[i+1] in str_aieo:
+                    converted += str_b[str_aieo.index(word[i+1])]
+                    i += 1
+                else:
+                    converted += 'び'
         else:
-            converted += word[i]
-            i += 1
+            converted += _convert_char(word[i])
+        i += 1
 
     return converted
-
-
-def normalize_ime(word: str) -> str:
-    word = convert_v(word)
-    normalized = ''
-    for char in word:
-        normalized += enlarge_hira(char)
-    return normalized
 
 
 def sort_buta(words: list) -> list:
@@ -70,7 +64,7 @@ def main():
         ime_words = load_ime(args.file)
         words = []
         for word in ime_words:
-            words.append(normalize_ime(word))
+            words.append(convert_hira(word))
 
         words = sort_buta(words)
         for word in words:
