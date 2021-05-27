@@ -2,9 +2,17 @@
 import argparse
 
 
-def load(file_name: str) -> list:
+def load(file_name: str, key_pos: int = -1, is_ime: bool = False) -> list:
+    if is_ime:
+        return load_ime(file_name)
+
     with open(file_name) as file:
-        words = file.read().splitlines()
+        splits = file.read().splitlines()
+        if key_pos < 0:
+            return splits
+        words = []
+        for line_split in splits:
+            words.append(line_split.split()[key_pos])
         return words
 
 
@@ -64,15 +72,14 @@ def main():
     parser = argparse.ArgumentParser(description='言葉リストを正規化する')
     parser.add_argument('file', type=str, help='入力ファイル')
     parser.add_argument('--ime', action='store_true', help='IMEファイルを変換')
+    parser.add_argument('-k', '--key', type=int, default=0, help='位置を指定')
     args = parser.parse_args()
 
+    loads = load(args.file, args.key - 1, args.ime)
+
     words = []
-    if args.ime:
-        ime_words = load_ime(args.file)
-        for word in ime_words:
-            words.append(convert_hira(word))
-    else:
-        words = load(args.file)
+    for word in loads:
+        words.append(convert_hira(word))
 
     words = sort_len(words)
     for word in words:

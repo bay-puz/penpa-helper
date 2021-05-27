@@ -26,7 +26,7 @@
 本家（第12版）の配布場所は[豚辞書の詳細情報 : Vector ソフトを探す！](https://www.vector.co.jp/soft/dl/dos/game/se018509.html)だが、より新しい第14版を[【非公式】豚辞書 第14版【再頒布】](https://kinosei.ml/2015/02/11/%E3%80%90%E9%9D%9E%E5%85%AC%E5%BC%8F%E3%80%91%E8%B1%9A%E8%BE%9E%E6%9B%B8-%E7%AC%AC14%E7%89%88%E3%80%90%E5%86%8D%E9%A0%92%E5%B8%83%E3%80%91/)で再配布している。
 ここでは第14版を使う。
 
-### リスト化
+#### リスト化
 ```
 python normalize.py butah014/buta014.dic > list/buta.txt
 ```
@@ -50,3 +50,21 @@ python normalize.py --ime np.dat > list/nico-pixiv.txt
 生成物(dic-nico-intersection-pixiv.txt)の著作権を主張しないと宣言しているので、加工物(list/nico-pixiv.txt)を公開します。
 
 > 生成物はスクレイピング結果を利用している都合上、 著作権は主張しません。
+
+
+### 漢字四文字言葉集
+[漢字四文字言葉集](http://nikolist.jpn.org/puzzle/kanjinuke/)
+
+#### リスト化
+```
+curl http://nikolist.jpn.org/puzzle/kanjinuke/yojijukugo.txt > yoji.dat
+nkf --overwrite -w yoji.txt
+python3 normalize.py -k2 yoji.dat > list/yojijukugo.txt
+```
+
+#### ライセンスについて
+list/yojijukugo.txt は[CC BY-NC-SA 2.1 JP](https://creativecommons.org/licenses/by-nc-sa/2.1/jp/)に準拠する。
+元データがこのライセンスに準拠しているため。
+
+> プログラムのソースなどはクリエイティブコモンズの帰属・非営利・同一条件配布に準拠。
+> http://nikolist.jpn.org/index.html
