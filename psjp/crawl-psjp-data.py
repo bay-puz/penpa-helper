@@ -10,7 +10,8 @@ from time import sleep
 
 PSJP_URL = 'https://puzsq.jp/main/index.php'
 OLDEST_PROBLEM_ID = 2
-MAX_PAGE_ID = 1000
+MIN_PAGE_ID = 1
+MAX_PAGE_ID = 10000
 
 
 def get_psjp(page_id: int = 0):
@@ -130,7 +131,7 @@ def problem_dict(problem_soup):
 
 
 def loop():
-    page_id = 1
+    page_id = MIN_PAGE_ID
     while True:
         psjp_page = get_psjp(page_id)
 
