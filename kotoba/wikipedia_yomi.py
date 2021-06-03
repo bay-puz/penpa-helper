@@ -1,28 +1,33 @@
 # -*- coding: utf-8 -*-
-from bs4 import BeautifulSoup
 import re
+from bs4 import BeautifulSoup
 
 
 # かな文字（全角等号は人名に使われる）
 KANA_PATTERN = '[ぁ-ヿ 　＝]'
+
 
 def is_kana(char: str) -> bool:
     return re.fullmatch(KANA_PATTERN, char)
 
 
 def is_kana_word(word: str) -> bool:
-    for c in word:
-        if not is_kana(c):
+    for char in word:
+        if not is_kana(char):
             return False
     return True
 
 
 def is_worthful(word: str) -> bool:
-    # 空白またはかな1文字は除外
+    """
+    言葉として適しているどうかを判定する
+    - 空白またはかな1文字はFalse
+    - 一覧、年代、日付はFalse
+    """
+
     if len(word) < 1 or is_kana(word):
         return False
 
-    # 一覧と日付は除外する
     denied_patterns = ['.+一覧', '[0-9]+年代', '[0-9]+年', '[0-9]+月[0-9]+日']
     for pat in denied_patterns:
         if re.fullmatch(pat, word):
@@ -32,21 +37,28 @@ def is_worthful(word: str) -> bool:
 
 
 def trim_title(word: str) -> str:
-    # "Wikipedia: "を削る
+    """
+    titleタグから余分な文字を削る
+    - 先頭の"Wikipedia: "を削る
+    - " (曖昧さ回避)"のように括弧があれば削る
+    """
+
     title_prefix = 'Wikipedia: '
     word = word.replace(title_prefix, '')
 
-    # "（曖昧さ回避）"などを削る
     trim_pattern = '[ 　]?[（(].+[）)]'
     searched = re.search(trim_pattern, word)
     if searched:
-        word= word[:searched.start()]
+        word = word[:searched.start()]
     return word
 
 
 def get_yomi_by_yomigana(abst: str) -> str:
-    # abstractが"|よみがな = こうもくめい"のときに読み仮名を取る
-    yomigana_prefix = "\|よみがな = "
+    """
+    abstractタグにTemplateの"よみがな"が入ることがあるのでそれを取り出す
+    """
+
+    yomigana_prefix = re.escape("|よみがな = ")
     yomigana_pattern = yomigana_prefix + KANA_PATTERN + '+'
     if re.fullmatch(yomigana_pattern, abst):
         return re.sub(yomigana_prefix, '', abst)
@@ -55,21 +67,27 @@ def get_yomi_by_yomigana(abst: str) -> str:
 
 
 def get_yomi_by_parenthesis(abst: str, title: str) -> str:
+    """
+    abstractの冒頭に"項目名（読み仮名）"と書かれるのでそれを取り出す
+    - "項目名（こうもくめい）では、〜"といったabstractの場合は、
+    　項目名が語ではないことが多いので除外する
+    - 読み仮名と閉じ括弧のあいだに別の語がある場合は削る
+    - 2つ以上の読みを"もしくは"などでつなげている場合は最初の読みを取る
+
+    """
     abst = abst.replace(' ', '').replace('　', '')
     abst = abst.replace('(', '（').replace(')', '）')
 
-    # "この項目名（こうもくめい）では、〜"といったabstractを除外
     deha_pattern = '）(一覧)?では'
     searched = re.search(deha_pattern, abst)
     if searched:
         if re.search('）', abst).start() == searched.start():
             return ''
 
-    # "項目名（こうもくめい、名詞）は〜"といった文から読み仮名を取る
     yomi_prefix = re.escape(title) + '（'
     yomi_suffix = '[）、，,]'
     yomi_pattern = yomi_prefix + KANA_PATTERN + '+' + yomi_suffix
-    searched= re.search(yomi_pattern, abst)
+    searched = re.search(yomi_pattern, abst)
     if searched is None:
         return ''
 
@@ -77,7 +95,6 @@ def get_yomi_by_parenthesis(abst: str, title: str) -> str:
     yomi = re.sub(yomi_prefix, '', yomi)
     yomi = re.sub(yomi_suffix, '', yomi)
 
-    # 2つ以上の読みを"もしくは"でつなげている場合があるので、最初の読みを取る
     deliminate_words = ['もしくは', 'または']
     for deliminator in deliminate_words:
         searched = re.search(deliminator, yomi)
