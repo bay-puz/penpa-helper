@@ -28,13 +28,19 @@ def load_ime(file_name: str) -> list:
         return words
 
 
-def kata_to_hira(char: str) -> str:
-    if ord("ァ") <= ord(char) <= ord("ヶ"):
-        return chr(ord(char) - 96)
-    return char
+def kata_to_hira(word: str) -> str:
+    hira_word = ''
+    for char in word:
+        if ord("ァ") <= ord(char) <= ord("ヶ"):
+            hira_word += chr(ord(char) - 96)
+        else:
+            hira_word += char
+    return hira_word
 
 
 def convert_hira(word: str) -> str:
+    word = kata_to_hira(word)
+
     def _convert_char(char: str):
         str_before = "ぁぃぅぇぉゕゖっゃゅょゎゐゑ"
         str_after = "あいうえおかけつやゆよわいえ"

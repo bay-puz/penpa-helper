@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import argparse
 import re
 from bs4 import BeautifulSoup
 
@@ -24,7 +25,6 @@ def is_worthful(word: str) -> bool:
     - 空白またはかな1文字はFalse
     - 一覧、年代、日付はFalse
     """
-
     if len(word) < 1 or is_kana(word):
         return False
 
@@ -42,7 +42,6 @@ def trim_title(word: str) -> str:
     - 先頭の"Wikipedia: "を削る
     - " (曖昧さ回避)"のように括弧があれば削る
     """
-
     title_prefix = 'Wikipedia: '
     word = word.replace(title_prefix, '')
 
@@ -57,7 +56,6 @@ def get_yomi_by_yomigana(abst: str) -> str:
     """
     abstractタグにTemplateの"よみがな"が入ることがあるのでそれを取り出す
     """
-
     yomigana_prefix = re.escape("|よみがな = ")
     yomigana_pattern = yomigana_prefix + KANA_PATTERN + '+'
     if re.fullmatch(yomigana_pattern, abst):
@@ -73,7 +71,6 @@ def get_yomi_by_parenthesis(abst: str, title: str) -> str:
     　項目名が語ではないことが多いので除外する
     - 読み仮名と閉じ括弧のあいだに別の語がある場合は削る
     - 2つ以上の読みを"もしくは"などでつなげている場合は最初の読みを取る
-
     """
     abst = abst.replace(' ', '').replace('　', '')
     abst = abst.replace('(', '（').replace(')', '）')
@@ -124,7 +121,7 @@ def parse_title(xml_line: str) -> str:
 
 
 def find_title(xml_line: str) -> str:
-    if not re.search('title', xml_line):
+    if not re.search('<title>', xml_line):
         return ''
 
     title = parse_title(xml_line)
@@ -146,6 +143,8 @@ def parse_abstract(xml_line: str, title: str) -> (bool, str):
 def find_yomi(xml_line: str, latest_title: str) -> str:
     if len(latest_title) < 1:
         return ''
+    if not re.search('<abstract>', xml_line):
+        return ''
 
     is_parsed, yomi = parse_abstract(xml_line, latest_title)
     if is_parsed:
@@ -160,8 +159,12 @@ def load_xml(file_name: str) -> list:
 
 
 def main():
-    file_name = 'test.xml'
-    lines = load_xml(file_name)
+    parser = argparse.ArgumentParser(
+        description='Wikipediaのデータベース・ダンプから項目名の読み仮名を抽出し表示する')
+    parser.add_argument('xml', type=str, help='ダンプファイル (xml)')
+    args = parser.parse_args()
+
+    lines = load_xml(args.xml)
 
     latest_title = ''
     for line in lines:
