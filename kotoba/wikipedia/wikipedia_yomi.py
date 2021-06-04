@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import argparse
 import re
+from sys import stderr
 from bs4 import BeautifulSoup
 
 
-# かな文字（全角等号は人名に使われる）
-KANA_PATTERN = '[ぁ-ヿ 　＝]'
+# 項目名・読み仮名に使われるかな文字
+KANA_PATTERN = '[ぁ-ヿ 　＝、，,。〜~！？!?⁉‼⁈★☆♡♪♂♀-]'
 
 
 def is_kana(char: str) -> bool:
@@ -28,7 +29,9 @@ def is_worthful(word: str) -> bool:
     if len(word) < 1 or is_kana(word):
         return False
 
-    denied_patterns = ['.+一覧', '[0-9]+年代', '[0-9]+年', '[0-9]+月[0-9]+日']
+    denied_patterns = ['.+一覧', '.+年表', '.+順リスト']
+    denied_patterns += ['[0-9]+月[0-9]+日', '[0-9]+年']
+    denied_patterns += ['[0-9]+年代', '(紀元前)?[0-9]+(世|千年)紀']
     for pat in denied_patterns:
         if re.fullmatch(pat, word):
             return False
@@ -69,35 +72,37 @@ def get_yomi_by_parenthesis(abst: str, title: str) -> str:
     abstractの冒頭に"項目名（読み仮名）"と書かれるのでそれを取り出す
     - "項目名（こうもくめい）では、〜"といったabstractの場合は、
     　項目名が語ではないことが多いので除外する
-    - 読み仮名と閉じ括弧のあいだに別の語がある場合は削る
-    - 2つ以上の読みを"もしくは"などでつなげている場合は最初の読みを取る
+    - 読み仮名と閉じ括弧のあいだに"、"などで区切られた別の語がある場合は削る
+        - ただし、項目名にその区切りの記号が含まれる場合は削らない
     """
     abst = abst.replace(' ', '').replace('　', '')
     abst = abst.replace('(', '（').replace(')', '）')
 
-    deha_pattern = '）(一覧)?では'
+    deha_pattern = '）((一覧)?(の記事)?では|の一覧)'
     searched = re.search(deha_pattern, abst)
     if searched:
         if re.search('）', abst).start() == searched.start():
             return ''
 
-    yomi_prefix = re.escape(title) + '（'
-    yomi_suffix = '[）、，,]'
-    yomi_pattern = yomi_prefix + KANA_PATTERN + '+' + yomi_suffix
-    searched = re.search(yomi_pattern, abst)
+    yomi_pattern = '[「『]?' + re.escape(title) + '[」』]?' + '（' + KANA_PATTERN + '+' + '）'
+    searched = re.match(yomi_pattern, abst)
     if searched is None:
         return ''
 
     yomi = searched.group(0)
-    yomi = re.sub(yomi_prefix, '', yomi)
-    yomi = re.sub(yomi_suffix, '', yomi)
+    yomi = yomi.replace(title, '')
+    yomi = re.sub('[『』「」（）]', '', yomi)
 
-    deliminate_words = ['もしくは', 'または']
-    for deliminator in deliminate_words:
-        searched = re.search(deliminator, yomi)
-        # 項目名に含まれるときは除く
-        if searched and not re.search(deliminator, title):
-            yomi = yomi[:searched.start()]
+    all_delimitors = '([、，,・]|もしくは|または)'
+    delimitors = ['、', '，', ',', '・', 'もしくは', 'または']
+    if re.search(all_delimitors, yomi):
+        for delimitor in delimitors:
+            if re.search(delimitor, title):
+                continue
+            searched = re.search(delimitor, yomi)
+            if searched:
+                yomi = yomi[:searched.start()]
+                continue
 
     return yomi
 
@@ -121,7 +126,7 @@ def parse_title(xml_line: str) -> str:
 
 
 def find_title(xml_line: str) -> str:
-    if not re.search('<title>', xml_line):
+    if not re.match('<title>', xml_line):
         return ''
 
     title = parse_title(xml_line)
@@ -143,7 +148,7 @@ def parse_abstract(xml_line: str, title: str) -> (bool, str):
 def find_yomi(xml_line: str, latest_title: str) -> str:
     if len(latest_title) < 1:
         return ''
-    if not re.search('<abstract>', xml_line):
+    if not re.match('<abstract>', xml_line):
         return ''
 
     is_parsed, yomi = parse_abstract(xml_line, latest_title)
@@ -153,9 +158,27 @@ def find_yomi(xml_line: str, latest_title: str) -> str:
     return ''
 
 
-def load_xml(file_name: str) -> list:
+def load_xml(file_name: str) -> int:
+    word_n = 0
+    latest_title = ''
     with open(file_name) as file:
-        return file.read().splitlines()
+        for line in file:
+            if not re.match("<(title|abstract)>", line):
+                continue
+            title = find_title(line)
+            if len(title) > 0:
+                if is_kana_word(title):
+                    print(title)
+                    word_n += 1
+                else:
+                    latest_title = title
+                continue
+
+            yomi = find_yomi(line, latest_title)
+            if len(yomi) > 0:
+                print(yomi)
+                word_n += 1
+    return word_n
 
 
 def main():
@@ -164,21 +187,8 @@ def main():
     parser.add_argument('xml', type=str, help='ダンプファイル (xml)')
     args = parser.parse_args()
 
-    lines = load_xml(args.xml)
-
-    latest_title = ''
-    for line in lines:
-        title = find_title(line)
-        if len(title) > 0:
-            if is_kana_word(title):
-                print(title)
-            else:
-                latest_title = title
-            continue
-
-        yomi = find_yomi(line, latest_title)
-        if len(yomi) > 0:
-            print(yomi)
+    count_word = load_xml(args.xml)
+    print(count_word, file=stderr)
 
 
 if __name__ == '__main__':

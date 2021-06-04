@@ -41,31 +41,67 @@ def kata_to_hira(word: str) -> str:
 def convert_hira(word: str) -> str:
     word = kata_to_hira(word)
 
-    def _convert_char(char: str):
-        str_before = "ぁぃぅぇぉゕゖっゃゅょゎゐゑ"
-        str_after = "あいうえおかけつやゆよわいえ"
+    def _convert_v(char: str, char_next: str) -> (str, str):
+        if char != 'ゔ':
+            return char, char_next
+        str_a = 'ぁぃぇぉ'
+        str_y = 'ゃゅょ'
+        str_b = 'ばびべぼ'
+        if len(char_next) == 0 or char_next not in str_a + str_y:
+            return 'ぶ', char_next
+        if char_next in str_a:
+            return str_b[str_a.index(char_next)], ''
+        return 'び', char_next
+
+    def _dakuon(char: str):
+        str_sei = 'かきくけこさしすせそたちつてとはひふへほう'
+        str_daku = 'がぎぐげござじずぜぞだぢづでどばびぶべぼゔ'
+        if char not in str_sei:
+            return char
+        return str_daku[str_sei.index(char)]
+
+    def _convert_odoriji(char_pre: str, char: str) -> (str, str):
+        odoriji = 'ゝヽゞヾ'
+        if len(char) == 0 or char not in odoriji:
+            return char_pre, char
+        if char in odoriji[:2]:
+            return char_pre, char_pre
+        return char_pre, _dakuon(char_pre)
+
+    def _convert_suteji(char: str) -> str:
+        str_before = "ぁぃぅぇぉゕゖっゃゅょゎゐゑ〜"
+        str_after = "あいうえおかけつやゆよわいえー"
         if char in str_before:
             return str_after[str_before.index(char)]
         return char
 
-    converted = ''
+    def _remove_garbage(char: str) -> str:
+        all_kana = 'あいうえおかきくけこさしすせそたちつてとなにぬねの'
+        all_kana += 'はひふへほまみむめもやゆよらりるれろわをんー'
+        all_kana += 'がぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ'
+        if char in all_kana:
+            return char
+        return ''
+
+    word_l = list(word)
     i = 0
-    while i < len(word):
-        str_aieo = 'ぁぃぇぉ'
-        str_yayuyo = 'ゃゅょ'
-        str_b = 'ばびべぼ'
-        if word[i] == 'ゔ':
-            if i == len(word) - 1 or word[i+1] not in str_aieo + str_yayuyo:
-                converted += 'ぶ'
+    while i < len(word_l):
+        char = word_l[i]
+        char_next = '' if i + 1 >= len(word_l) else word_l[i+1]
+        char, char_next = _convert_v(char, char_next)
+        char, char_next = _convert_odoriji(char, char_next)
+        word_l[i] = char
+        if i + 1 < len(word_l):
+            if len(char_next) == 0:
+                word_l.pop(i+1)
+                i -= 1
             else:
-                if word[i+1] in str_aieo:
-                    converted += str_b[str_aieo.index(word[i+1])]
-                    i += 1
-                else:
-                    converted += 'び'
-        else:
-            converted += _convert_char(word[i])
+                word_l[i+1] = char_next
         i += 1
+
+    converted = ''
+    for char in word_l:
+        converted += _remove_garbage(_convert_suteji(char))
 
     return converted
 
