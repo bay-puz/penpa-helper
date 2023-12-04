@@ -99,9 +99,9 @@ def is_number(row: int, column: int, board: list) -> bool:
     if not is_whitecell(row, column):
         return False
 
-    if not is_whitecell(row-1, column) and is_whitecell(row+1, column):
+    if not is_whitecell(row - 1, column) and is_whitecell(row + 1, column):
         return True
-    if not is_whitecell(row, column-1) and is_whitecell(row, column+1):
+    if not is_whitecell(row, column - 1) and is_whitecell(row, column + 1):
         return True
 
     return False

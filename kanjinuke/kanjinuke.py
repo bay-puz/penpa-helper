@@ -60,16 +60,16 @@ def trans_problem(words: list):
 
 
 def show_words(charas: dict, ids: dict) -> None:
-    column = math.ceil(len(charas)/4)
+    column = math.ceil(len(charas) / 4)
     for i in range(0, column):
         str_charas = charas[i]
         str_ids = ids[i]
         for j in [1, 2, 3]:
-            count = j*column + i
+            count = j * column + i
             if count >= len(charas):
                 break
-            word_left = (j-1)*column + i
-            space = "   " * (6 - int(len(charas[word_left])/2))
+            word_left = (j - 1) * column + i
+            space = "   " * (6 - int(len(charas[word_left]) / 2))
             str_charas += space + charas[count]
             str_ids += space + ids[count]
         print(str_charas)
@@ -78,8 +78,8 @@ def show_words(charas: dict, ids: dict) -> None:
 
 
 def show_list(answer: dict, show_answer: bool):
-    ans_column = math.ceil(len(answer)/17)
-    ans_row = math.ceil(len(answer)/ans_column)
+    ans_column = math.ceil(len(answer) / 17)
+    ans_row = math.ceil(len(answer) / ans_column)
     ans_top = '┏'
     ans_middle = '┠'
     ans_bottom = '┗'
