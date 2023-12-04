@@ -109,7 +109,7 @@ def solve(jisho: list, problem: list) -> list:
 
     print("候補が{}個あります".format(num_cand))
     for i in range(num_cand):
-        print("{}. {}".format(i+1, candidates[i][0]))
+        print("{}. {}".format(i + 1, candidates[i][0]))
     print("")
 
     if num_cand < height:
