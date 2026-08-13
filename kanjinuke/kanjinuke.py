@@ -167,18 +167,16 @@ def analysis(words: list) -> None:
     print()
 
     print("--ヒント数--")
-    count_hint = {}
+    count_hint = [0] * 5
     for word in words:
         word_count_hint = 0
         for _, chara in enumerate(word):
             if all_chara.count(chara) == 1:
                 word_count_hint += 1
-        if word_count_hint in count_hint:
-            count_hint[word_count_hint] += 1
-        else:
-            count_hint[word_count_hint] = 1
-    for hint, count in count_hint.items():
-        print("hint {}: {} words".format(hint, count))
+        count_hint[word_count_hint] += 1
+    for hint, count in enumerate(count_hint):
+        if count > 0:
+            print("ヒント数{}：{}語".format(hint, count))
     print()
 
     print("--包含関係--")
@@ -199,7 +197,7 @@ def analysis(words: list) -> None:
         for other_word, count in other_words.items():
             if count == hidden_charas:
                 count_include += 1
-                print("{} is in {}".format(word, other_word))
+                print("{} は {} に含まれる".format(word, other_word))
 
     if count_include == 0:
         print("なし")
