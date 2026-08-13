@@ -17,10 +17,7 @@ def load_words(file: str) -> list:
 
 
 def adjust_width(num: int) -> str:
-    if num < 10:
-        return ' ' + str(num)
-
-    return str(num)
+    return str(num).rjust(2, ' ')
 
 
 def trans_problem(words: list):
@@ -177,8 +174,9 @@ def analysis(words: list) -> None:
             count_hint[word_count_hint] += 1
         else:
             count_hint[word_count_hint] = 1
-    for hint, count in count_hint.items():
-        print("hint {}: {} words".format(hint, count))
+    for hint, count in sorted(count_hint.items()):
+        if count > 0:
+            print("ヒント数{}：{}語".format(hint, adjust_width(count)))
     print()
 
     print("--包含関係--")
@@ -199,7 +197,7 @@ def analysis(words: list) -> None:
         for other_word, count in other_words.items():
             if count == hidden_charas:
                 count_include += 1
-                print("{} is in {}".format(word, other_word))
+                print("{} は {} に含まれる".format(word, other_word))
 
     if count_include == 0:
         print("なし")
